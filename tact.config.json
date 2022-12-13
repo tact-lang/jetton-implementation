@@ -1,7 +1,19 @@
 {
     "projects": [{
-        "name": "sample",
-        "path": "./sources/contract.tact",
-        "output": "./sources/output"
+        "name": "JettonMinter",
+        "path": "./sources/jetton_minter.tact",
+        "output": "./sources/output",
+        "mode": "full",
+        "options": {
+            "external": false,
+            "debug": false,
+            "masterchain": false,
+            "ipfsAbiGetter": false,
+            "interfacesGetter": false,
+            "experimental": {
+                "inline": false
+            }
+        }
     }]
 }
+
