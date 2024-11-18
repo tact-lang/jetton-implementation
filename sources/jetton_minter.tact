@@ -33,17 +33,15 @@ contract JettonMinter with OwnableTransferable, Deployable {
         require(sender() == self.getJettonWalletByOwner(msg.sender), "Not wallet owner");
 
         self.totalSupply -= msg.amount;
-        if (msg.response_destination != null) {
-            send(SendParameters{
-                to: msg.response_destination!!,
-                value: 0,
-                bounce: false,
-                mode: SendRemainingValue,
-                body: TokenExcesses{
-                query_id: msg.query_id
-                }.toCell()
-            });
-        }
+        send(SendParameters{
+            to: msg.response_destination,
+            value: 0,
+            bounce: false,
+            mode: SendRemainingValue,
+            body: TokenExcesses{
+            query_id: msg.query_id
+            }.toCell()
+        });
     }
 
     receive(msg: TokenUpdateContent){
