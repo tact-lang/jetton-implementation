@@ -50,7 +50,7 @@ message(0x7362d09c) TokenNotification {
 message(0x595f07bc) TokenBurn {
     query_id: Int as uint64;
     amount: Int as coins;
-    response_destination: Address?;
+    response_destination: Address;
     custom_payload: Cell?;
 }
 
@@ -58,7 +58,7 @@ message(0x7bdd97de) TokenBurnNotification {
     query_id: Int as uint64;
     amount: Int as coins;
     sender: Address;
-    response_destination: Address?;
+    response_destination: Address;
 }
 
 message(0xd53276db) TokenExcesses {

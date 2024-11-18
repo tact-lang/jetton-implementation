@@ -202,7 +202,7 @@ describe("JettonMinter", () => {
                 via: Sender,
                 value: bigint,
                 jetton_amount: bigint,
-                responseAddress: Address | null,
+                responseAddress: Address,
                 customPayload: Cell | null
             ) => {
                 let msg: TokenBurn = {
@@ -668,18 +668,48 @@ describe("JettonMinter", () => {
         let initialJettonBalance   = await deployerJettonWallet.getJettonBalance();
         let initialTotalSupply     = await jettonMinter.getTotalSupply();
         let burnAmount   = toNano('0.01');
-        let minimalFee   = fwd_fee + 2n*gas_consumption + min_tons_for_storage; //TODO added + min_tons_for_storage
+        //let minimalFee   = fwd_fee + 2n*gas_consumption + min_tons_for_storage;
+        //let minimalFee = toNano("0.006");
+        let L = toNano(0.00000001);
+        let R = toNano(0.1);
+        //TODO change false to true if you want to find minimal fee
+        while(R - L > 1 && false) {
+            let minimalFee = (L + R) / 2n;
+            try {
+                const sendLow    = await deployerJettonWallet.sendBurn(deployer.getSender(), minimalFee, // ton amount
+                    burnAmount, deployer.address, null); // amount, response address, custom payload
+                //TODO Here was tests, that checks that there is enough ton to jetton wallet to send a message.
+                //However I check that there is enough ton for jetton minter to return excesses.
+                expect(sendLow.transactions).toHaveTransaction({
+                    from: deployerJettonWallet.address,
+                    to: jettonMinter.address,
+                    aborted: true,
+                    success: false,
+                });
+                L = minimalFee;
+            }
+            catch {
+                R = minimalFee;
+            }
+        }
+        console.log(L);
+        let minimalFee = 11962799n;
 
         const sendLow    = await deployerJettonWallet.sendBurn(deployer.getSender(), minimalFee, // ton amount
             burnAmount, deployer.address, null); // amount, response address, custom payload
-
+        //TODO Here was tests, that checks that there is enough ton to jetton wallet to send a message.
         expect(sendLow.transactions).toHaveTransaction({
             from: deployer.address,
             to: deployerJettonWallet.address,
             aborted: true,
             success: false,
         });
-
+        expect(sendLow.transactions).toHaveTransaction({
+            from: deployerJettonWallet.address,
+            to: jettonMinter.address,
+            aborted: true,
+            success: false,
+        });
         const sendExcess = await deployerJettonWallet.sendBurn(deployer.getSender(), minimalFee + 1n,
             burnAmount, deployer.address, null);
 
@@ -688,7 +718,6 @@ describe("JettonMinter", () => {
             to: deployerJettonWallet.address,
             success: true
         });
-
         expect(await deployerJettonWallet.getJettonBalance()).toEqual(initialJettonBalance - burnAmount);
         expect(await jettonMinter.getTotalSupply()).toEqual(initialTotalSupply - burnAmount);
 

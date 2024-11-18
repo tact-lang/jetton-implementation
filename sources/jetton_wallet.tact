@@ -113,7 +113,7 @@ contract JettonWallet with Ownable {
         self.balance -= msg.amount; // Update balance
         require(self.balance >= 0, "Invalid balance after burn");
         let fwd_fee: Int = ctx.readForwardFee(); // Gas checks
-        require(ctx.value > ((fwd_fee + 2 * self.gasConsumption) + self.minTonsForStorage), "Invalid value - Burn");
+        //require(ctx.value > ((fwd_fee + 2 * self.gasConsumption) + self.minTonsForStorage), "Invalid value - Burn");
         // Burn tokens
         send(SendParameters{
             to: self.master,
