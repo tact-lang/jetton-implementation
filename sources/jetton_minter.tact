@@ -37,7 +37,7 @@ contract JettonMinter with OwnableTransferable, Deployable {
             to: msg.response_destination,
             value: 0,
             bounce: false,
-            mode: SendRemainingValue,
+            mode: SendRemainingValue + SendIgnoreErrors, //ignore errors, because supply already been updated
             body: TokenExcesses{
             query_id: msg.query_id
             }.toCell()
