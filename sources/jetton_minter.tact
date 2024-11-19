@@ -51,7 +51,7 @@ contract JettonMinter with OwnableTransferable, Deployable {
 
     // https://github.com/ton-blockchain/TEPs/blob/master/text/0089-jetton-wallet-discovery.md
     receive(msg: ProvideWalletAddress) {
-        require(context().value >= ton("0.006613999"), "Insufficient gas");
+        require(context().value >= ton("0.006625199"), "Insufficient gas");
         let includedAddress: Address? = null;
         let workchain: Int = parseStdAddress(msg.owner_address.asSlice()).workchain;
         //Note, that emptyAddress != null, it is different values.
