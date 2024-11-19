@@ -673,52 +673,46 @@ describe("JettonMinter", () => {
         let L = toNano(0.00000001);
         let R = toNano(0.1);
         //TODO change false to true if you want to find minimal fee
+        //implementing binary search
         while(R - L > 1 && false) {
             let minimalFee = (L + R) / 2n;
             try {
                 const sendLow    = await deployerJettonWallet.sendBurn(deployer.getSender(), minimalFee, // ton amount
                     burnAmount, deployer.address, null); // amount, response address, custom payload
-                //TODO Here was tests, that checks that there is enough ton to jetton wallet to send a message.
-                //However I check that there is enough ton for jetton minter to return excesses.
+
                 expect(sendLow.transactions).toHaveTransaction({
                     from: deployerJettonWallet.address,
                     to: jettonMinter.address,
-                    aborted: true,
-                    success: false,
+                    exitCode: 0
                 });
-                L = minimalFee;
+                R = minimalFee;
             }
             catch {
-                R = minimalFee;
+                L = minimalFee;
             }
         }
         console.log(L);
-        let minimalFee = 11962799n;
+        let minimalFee = 11217199n;
+        //It is the number you can get in console.log(R) if setting "false" to "true" in while loop above
 
         const sendLow    = await deployerJettonWallet.sendBurn(deployer.getSender(), minimalFee, // ton amount
             burnAmount, deployer.address, null); // amount, response address, custom payload
         //TODO Here was tests, that checks that there is enough ton to jetton wallet to send a message.
-        expect(sendLow.transactions).toHaveTransaction({
-            from: deployer.address,
-            to: deployerJettonWallet.address,
-            aborted: true,
-            success: false,
-        });
+        //However I check that it is enough ton to process a message from jetton wallet to jetton minter
         expect(sendLow.transactions).toHaveTransaction({
             from: deployerJettonWallet.address,
             to: jettonMinter.address,
-            aborted: true,
-            success: false,
+            exitCode: (code) => {return code !== 0},
         });
-        const sendExcess = await deployerJettonWallet.sendBurn(deployer.getSender(), minimalFee + 1n,
+        const sendEnough = await deployerJettonWallet.sendBurn(deployer.getSender(), minimalFee + 1n,
             burnAmount, deployer.address, null);
 
-        expect(sendExcess.transactions).toHaveTransaction({
-            from: deployer.address,
-            to: deployerJettonWallet.address,
-            success: true
+        expect(sendEnough.transactions).toHaveTransaction({
+            from: deployerJettonWallet.address,
+            to: jettonMinter.address,
+            exitCode: 0,
         });
-        expect(await deployerJettonWallet.getJettonBalance()).toEqual(initialJettonBalance - burnAmount);
+        expect(await deployerJettonWallet.getJettonBalance()).toEqual(initialJettonBalance - burnAmount * 2n); //we multiply by 2 because first transfer from jetton wallet to jetton master succeeded
         expect(await jettonMinter.getTotalSupply()).toEqual(initialTotalSupply - burnAmount);
 
     });
