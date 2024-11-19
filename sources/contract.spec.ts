@@ -1,5 +1,14 @@
 import { Address, beginCell, Cell, contractAddress, ContractProvider, Sender, toNano, Slice } from '@ton/core';
-import { Blockchain, SandboxContract, TreasuryContract, internal, printTransactionFees } from '@ton/sandbox';
+import {
+    Blockchain,
+    SandboxContract,
+    TreasuryContract,
+    internal,
+    printTransactionFees,
+    BlockchainContractProvider,
+} from '@ton/sandbox';
+
+
 import {
     ChangeOwner,
     JettonMinter,
@@ -167,8 +176,16 @@ describe("JettonMinter", () => {
                     await jettonMinter.getGetWalletAddress(address)
                 )
             );
+            (newUserWallet as any).getProvider = async (provider: ContractProvider) => {
+                return provider;
+            }
 
-            const getJettonBalance = async (): Promise<bigint> => {
+            const getJettonBalance = async(): Promise<bigint> => {
+                let provider = await (newUserWallet as any).getProvider();
+                let state = await provider.getState();
+                if (state.state.type !== 'active') {
+                    return 0n;
+                }
                 return (await newUserWallet.getGetWalletData()).balance;
             };
 
@@ -693,7 +710,7 @@ describe("JettonMinter", () => {
         }
         console.log(L);
         let minimalFee = 11217199n;
-        //It is the number you can get in console.log(R) if setting "false" to "true" in while loop above
+        //It is the number you can get in console.log(L) if setting "false" to "true" in while loop above
 
         const sendLow    = await deployerJettonWallet.sendBurn(deployer.getSender(), minimalFee, // ton amount
             burnAmount, deployer.address, null); // amount, response address, custom payload
@@ -805,12 +822,33 @@ describe("JettonMinter", () => {
         // 5000 gas-units + msg_forward_prices.lump_price + msg_forward_prices.cell_price = 0.0061
         //const fwdFee     = 1464012n;
         //const minimalFee = fwdFee + 10000000n; // toNano('0.0061');
-        const minimalFee = toNano("0.006613999"); //TODO new minimal fee
+
+        //TODO Added binary search to find minimal fee
+        let L = toNano(0.00000001);
+        let R = toNano(0.1);
+        //Binary search here does not affect on anything except time of test
+        //So if you want to skip it, just replace while(R - L > 1) with while(false) or while(R - L > 1 && false)
+        while(R - L > 1) {
+            let minimalFee = (L + R) / 2n;
+            try {
+                const discoveryResult = await jettonMinter.sendDiscovery(deployer.getSender(), notDeployer.address, false, minimalFee);
+                expect(discoveryResult.transactions).toHaveTransaction({
+                    from: deployer.address,
+                    to: jettonMinter.address,
+                    success: true
+                });
+                R = minimalFee;
+            }
+            catch {
+                L = minimalFee;
+            }
+        }
+        console.log(L);
+        const minimalFee = L;
         let discoveryResult = await jettonMinter.sendDiscovery(deployer.getSender(),
             notDeployer.address,
             false,
             minimalFee);
-        printTransactionFees(discoveryResult.transactions);
         expect(discoveryResult.transactions).toHaveTransaction({
             from: deployer.address,
             to: jettonMinter.address,
