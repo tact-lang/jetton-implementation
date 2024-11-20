@@ -39,7 +39,7 @@ contract JettonMinter with OwnableTransferable, Deployable {
             bounce: false,
             mode: SendRemainingValue | SendIgnoreErrors, //ignore errors, because supply already been updated
             body: TokenExcesses{
-            query_id: msg.query_id
+                query_id: msg.query_id
             }.toCell()
         });
     }
@@ -104,7 +104,7 @@ contract JettonMinter with OwnableTransferable, Deployable {
                 amount: msg.amount,
                 from: myAddress(),
                 response_destination: self.owner, // Owner is minting, so send excess to owner
-                forward_ton_amount: 0,
+                forward_ton_amount: 1, // 1 nanoton is enough to send a notification
                 forward_payload: emptySlice()
             }.toCell(),
         code: winit.code,
