@@ -1,6 +1,6 @@
-import { Address, beginCell, Cell, contractAddress, ContractProvider, Sender, toNano, Slice } from '@ton/core';
+import { Address, Cell, ContractProvider, Sender } from '@ton/core';
 
-declare module '../output/JettonMinter_JettonMinter' {
+declare module '../output/Jetton_JettonMinter' {
     interface JettonMinter {
         getTotalSupply(provider: ContractProvider): Promise<bigint>;
         getWalletAddress(provider: ContractProvider, owner: Address): Promise<Address>;

@@ -5,7 +5,7 @@ contract JettonWallet with Ownable {
     balance: Int as coins;
     owner: Address;
     master: Address;
-    const minTonsForStorage: Int = ton("0.015"); // 0.01 TON in original funC implementation. Increased as we have more code size.
+    const minTonsForStorage: Int = ton("0.015"); // 0.01 TON in original funC implementation. Increased as we have approx. x2 code size
     const gasConsumption: Int = ton("0.015"); // 0.015 TON in original funC implementation. 0.13 TON is Howard's constant
     // According to tests, 23k gas is maximum gas consuption in transfer. 23k gas is 0.0092 TON
     // More precisely, max gas I could get is 22725
@@ -20,7 +20,7 @@ contract JettonWallet with Ownable {
         self.requireOwner();
 
         let totalFees: Int = (2 * context().readForwardFee() + 2 * self.gasConsumption) + self.minTonsForStorage + msg.forward_ton_amount;
-        dump(context().readForwardFee());
+
         //Context() returns Structure with info about incoming message
         require(context().value > totalFees, "Unsufficient amount of TON attached");
 

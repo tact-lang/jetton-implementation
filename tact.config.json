@@ -1,6 +1,6 @@
 {
     "projects": [{
-        "name": "JettonMinter",
+        "name": "Jetton",
         "path": "./sources/jetton_minter.tact",
         "output": "./sources/output",
         "mode": "full",
