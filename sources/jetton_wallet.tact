@@ -5,9 +5,10 @@ contract JettonWallet with Ownable {
     balance: Int as coins;
     owner: Address;
     master: Address;
-    const minTonsForStorage: Int = ton("0.019");
-    const gasConsumption: Int = ton("0.013");
-
+    const minTonsForStorage: Int = ton("0.015"); // 0.01 TON in original funC implementation. Increased as we have more code size.
+    const gasConsumption: Int = ton("0.015"); // 0.015 TON in original funC implementation. 0.13 TON is Howard's constant
+    // According to tests, 23k gas is maximum gas consuption in transfer. 23k gas is 0.0092 TON
+    // More precisely, max gas I could get is 22725
     init(owner: Address, master: Address) {
         self.balance = 0;
         self.owner = owner;
@@ -18,10 +19,10 @@ contract JettonWallet with Ownable {
     receive(msg: TokenTransfer) {
         self.requireOwner();
 
-        let final: Int = (((10 * 2 + 2 * self.gasConsumption) + self.minTonsForStorage) + msg.forward_ton_amount); // Gas checks, forward_ton = 0.152
-
+        let totalFees: Int = (2 * context().readForwardFee() + 2 * self.gasConsumption) + self.minTonsForStorage + msg.forward_ton_amount;
+        dump(context().readForwardFee());
         //Context() returns Structure with info about incoming message
-        require(context().value > final, "Unsufficient amount of TON attached");
+        require(context().value > totalFees, "Unsufficient amount of TON attached");
 
         self.balance -= msg.amount;
 
@@ -33,9 +34,10 @@ contract JettonWallet with Ownable {
 
         //We shouldn't send transfers to masterchain due to higher gas price
         require(parseStdAddress(msg.destination.asSlice()).workchain == 0, "Invalid workchain of destination address");
-        let init: StateInit = initOf JettonWallet(msg.destination, self.master);
 
+        let init: StateInit = initOf JettonWallet(msg.destination, self.master);
         let wallet_address: Address = contractAddress(init);
+
         send(SendParameters{
             to: wallet_address,
             value: 0,
@@ -49,10 +51,9 @@ contract JettonWallet with Ownable {
                 forward_ton_amount: msg.forward_ton_amount,
                 forward_payload: msg.forward_payload
             }.toCell(),
-        code: init.code,
-        data: init.data
-        }
-        );
+            code: init.code,
+            data: init.data
+        });
     }
 
     receive(msg: TokenTransferInternal) {
@@ -73,6 +74,7 @@ contract JettonWallet with Ownable {
         let tonBalanceBeforeMsg = myBalance() - msgValue;
         let storageFee = self.minTonsForStorage - min(tonBalanceBeforeMsg, self.minTonsForStorage);
         msgValue -= (storageFee + self.gasConsumption);
+
         let fwd_fee: Int = ctx.readForwardFee();
 
 
@@ -94,15 +96,15 @@ contract JettonWallet with Ownable {
         // 0xd53276db -- Cashback to the original Sender
         if (msg.response_destination != null && msgValue > 0) {
             send(SendParameters{
-            to: msg.response_destination!!,
-            value: msgValue,
-            mode: SendIgnoreErrors, // Jetton transfer is already succeeded, Here was PayGasSeparately in Howard's code
-            bounce: false,
-            body: TokenExcesses{
-            query_id: msg.query_id
-            }.toCell()
-            }
-            );
+                to: msg.response_destination!!,
+                value: msgValue,
+                mode: SendIgnoreErrors, // Jetton transfer is already succeeded, Here was only PayGasSeparately in Howard's code
+                //In official funC implementation it is SendIgnoreErrors
+                bounce: false,
+                body: TokenExcesses{
+                    query_id: msg.query_id
+                }.toCell()
+            });
         }
     }
 
@@ -112,7 +114,10 @@ contract JettonWallet with Ownable {
         let ctx: Context = context();
         self.balance -= msg.amount; // Update balance
         require(self.balance >= 0, "Invalid balance after burn");
-        require(ctx.value >= ton("0.011217199"), "Too little TONs for gas attached");
+
+        // This is minimal possible amount of TONs for attached. But still, maybe we should icrease it?
+        require(ctx.value > ton("0.011217199"), "Too little TONs for gas attached");
+
         //let fwd_fee: Int = ctx.readForwardFee(); // Gas checks
         //require(ctx.value > ((fwd_fee + 2 * self.gasConsumption) + self.minTonsForStorage), "Invalid value - Burn");
         // Burn tokens

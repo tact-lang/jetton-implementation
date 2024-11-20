@@ -1,4 +1,4 @@
-import { Address, beginCell, Cell, contractAddress, ContractProvider, Sender, toNano, Slice } from '@ton/core';
+import { Address, beginCell, Cell, contractAddress, ContractProvider, Sender, toNano, Slice, Builder } from '@ton/core';
 import {
     Blockchain,
     SandboxContract,
@@ -112,9 +112,9 @@ JettonMinter.prototype.sendDiscovery = async function (
     return this.send(provider, via, { value: value }, msg);
 };
 
-const min_tons_for_storage: bigint = toNano("0.019");
-const gas_consumption: bigint = toNano("0.013");
-const fwd_fee: bigint = toNano("0.009");
+const min_tons_for_storage: bigint = toNano("0.015");
+const gas_consumption: bigint = toNano("0.015");
+const fwd_fee: bigint = 721606n;
 
 const Op = {
     token_transfer: 0xf8a7ea5,
@@ -199,7 +199,7 @@ describe("JettonMinter", () => {
                 forward_ton_amount: bigint,
                 forwardPayload: Cell | null
             ) => {
-                const parsedForwardPayload = forwardPayload != null ? forwardPayload.beginParse() : new Cell().beginParse();
+                const parsedForwardPayload = forwardPayload != null ? forwardPayload.beginParse() : new Builder().storeUint(0, 1).endCell().beginParse(); //Either bit equals 0
                 let msg: TokenTransfer = {
                     $$type: "TokenTransfer",
                     query_id: 0n,
@@ -539,7 +539,7 @@ describe("JettonMinter", () => {
     it('works with minimal ton amount', async () => {
         const deployerJettonWallet = await userWallet(deployer.address);
         let initialJettonBalance = await deployerJettonWallet.getJettonBalance();
-        const someAddress = Address.parse("UQBAmIBdInKmGzdTUMay9fqq8nyCZ9jnUh_yBFEE_cfediVD");
+        const someAddress = Address.parse("EQD__________________________________________0vo");
         const someJettonWallet = await userWallet(someAddress);
         let initialJettonBalance2 = await someJettonWallet.getJettonBalance();
         await deployer.send({value:toNano('1'), bounce:false, to: deployerJettonWallet.address});
@@ -551,12 +551,14 @@ describe("JettonMinter", () => {
         */
         let minimalFee = 2n* fwd_fee + 2n*gas_consumption + min_tons_for_storage;
         let sentAmount = forwardAmount + minimalFee; // not enough, need >
+
         let forwardPayload = null;
         let tonBalance =(await blockchain.getContract(deployerJettonWallet.address)).balance;
         let tonBalance2 = (await blockchain.getContract(someJettonWallet.address)).balance;
         let sendResult = await deployerJettonWallet.sendTransfer(deployer.getSender(), sentAmount,
             sentAmount, someAddress,
             deployer.address, null, forwardAmount, forwardPayload);
+        printTransactionFees(sendResult.transactions);
         expect(sendResult.transactions).toHaveTransaction({
             from: deployer.address,
             to: deployerJettonWallet.address,
@@ -716,10 +718,10 @@ describe("JettonMinter", () => {
             burnAmount, deployer.address, null); // amount, response address, custom payload
         //TODO Here was tests, that checks that there is enough ton to jetton wallet to send a message.
         //However I check that it is enough ton to process a message from jetton wallet to jetton minter
-        expect(sendLow.transactions).toHaveTransaction({
+        expect(sendLow.transactions).not.toHaveTransaction({
             from: deployerJettonWallet.address,
             to: jettonMinter.address,
-            exitCode: (code) => {return code !== 0},
+            exitCode: 0,
         });
         const sendEnough = await deployerJettonWallet.sendBurn(deployer.getSender(), minimalFee + 1n,
             burnAmount, deployer.address, null);
@@ -729,7 +731,7 @@ describe("JettonMinter", () => {
             to: jettonMinter.address,
             exitCode: 0,
         });
-        expect(await deployerJettonWallet.getJettonBalance()).toEqual(initialJettonBalance - burnAmount * 2n); //we multiply by 2 because first transfer from jetton wallet to jetton master succeeded
+        expect(await deployerJettonWallet.getJettonBalance()).toEqual(initialJettonBalance - burnAmount);
         expect(await jettonMinter.getTotalSupply()).toEqual(initialTotalSupply - burnAmount);
 
     });
