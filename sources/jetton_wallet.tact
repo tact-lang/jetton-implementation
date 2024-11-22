@@ -1,6 +1,5 @@
 asm fun myCode(): Cell { MYCODE }
 
-@interface("org.ton.jetton.wallet")
 contract JettonWallet with Ownable {
     balance: Int as coins;
     owner: Address;

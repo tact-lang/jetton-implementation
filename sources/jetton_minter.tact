@@ -66,22 +66,11 @@ contract JettonMinter with OwnableTransferable, Deployable {
         if (msg.include_address) {
             includedAddress = msg.owner_address;
         }
-        let body: Builder = beginCell()
-        .storeUint(0xd1735400, 32)
-        .storeUint(msg.query_id, 64)
-        .storeSlice(targetJettonWallet.asSlice());
-        if (includedAddress != null) {
-            let includedAddressCell: Cell = beginCell().storeSlice(includedAddress!!.asSlice()).endCell();
-            body = body.storeBit(true); // Maybe bit
-            body = body.storeRef(includedAddressCell);
-        } else {
-            body = body.storeBit(false); // Maybe bit
-        }
         send(SendParameters{
             to: sender(),
             value: 0,
             mode: SendRemainingValue,
-            body: body.endCell()
+            body: self.takeWalletBody(targetJettonWallet, includedAddress, msg.query_id)
         });
     }
     receive(msg: Mint) {
@@ -112,12 +101,27 @@ contract JettonMinter with OwnableTransferable, Deployable {
         });
     }
 
-    fun getJettonWalletByOwner(jetton_wallet_owner: Address): Address {
+    inline fun takeWalletBody(targetJettonWallet: Address, includedAddress: Address?, query_id: Int): Cell {
+        let body: Builder = beginCell()
+        .storeUint(0xd1735400, 32)
+        .storeUint(query_id, 64)
+        .storeSlice(targetJettonWallet.asSlice());
+        if (includedAddress != null) {
+            let includedAddressCell: Cell = beginCell().storeSlice(includedAddress!!.asSlice()).endCell();
+            body = body.storeBit(true); // Maybe bit
+            body = body.storeRef(includedAddressCell);
+        } else {
+            body = body.storeBit(false); // Maybe bit
+        }
+        return body.endCell();
+    }
+
+    inline fun getJettonWalletByOwner(jetton_wallet_owner: Address): Address {
         let jwInit: StateInit = self.getJettonWalletInit(jetton_wallet_owner);
         return contractAddress(jwInit);
     }
 
-    fun getJettonWalletInit(address: Address): StateInit {
+    inline fun getJettonWalletInit(address: Address): StateInit {
         return initOf JettonWallet(address, myAddress());
     }
 
