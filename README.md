@@ -15,7 +15,7 @@ This implementation is fully compatible with the following TON standards:
 - [TEP-74](https://github.com/ton-blockchain/TEPs/blob/master/text/0074-jettons-standard.md),
 - [TEP-89](https://github.com/ton-blockchain/TEPs/blob/master/text/0089-jetton-wallet-discovery.md).
 
-You can use this implementation as an alternative to the official Jetton contracts available in the [TON Blockchain repository](https://github.com/ton-blockchain/token-contract).
+You can use this implementation as an alternative to the reference Jetton contracts available in the [TON Blockchain repository](https://github.com/ton-blockchain/token-contract).
 
 ## Getting Started
 
