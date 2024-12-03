@@ -82,6 +82,16 @@ Also, additional utils from `sources/utils/` are used in tests and deployment sc
 
 `tact.config.json` contains the configuration for the Tact compiler. In most cases, you don't need to modify this file.
 
+## Smart-Contracts Structure
+
+Main smart contract is `jetton_minter.tact`. It imports `messages.tact` and `jetton_wallet.tact`, so they will be compiled automatically, when setting `jetton_minter.tact` as target in `tact.config.json`.
+### Traits
+Jetton minter is using *OwnableTransferable* and *Deployable* trait. Actually, you can remove *Deployable* trait. It is used only for more convenient deployment in tests. 
+
+Jetton wallet is using only *Ownable* trait.
+
+You can learn more about traits in the [Tact standard library](https://docs.tact-lang.org/ref/standard-libraries/).
+
 ## Best Practices
 
 - For guidance on interacting with Jettons using Tact, check the [Jetton Cookbook](https://docs.tact-lang.org/cookbook/jettons/).
