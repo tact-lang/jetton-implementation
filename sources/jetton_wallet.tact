@@ -21,8 +21,7 @@ contract JettonWallet with Ownable {
         let totalFees: Int = (2 * context().readForwardFee() + 2 * self.gasConsumption) + self.minTonsForStorage + msg.forward_ton_amount;
 
         //Context() returns Structure with info about incoming message
-        require(context().value > totalFees, "Unsufficient amount of TON attached");
-
+        //require(context().value > totalFees, "Unsufficient amount of TON attached");
         self.balance -= msg.amount;
 
         //coins type is unsigned type, so
