@@ -86,10 +86,28 @@ Also, additional utils from `sources/utils/` are used in tests and deployment sc
 
 Main smart contract is `jetton_minter.tact`. It imports `messages.tact` and `jetton_wallet.tact`, so they will be compiled automatically, when setting `jetton_minter.tact` as target in `tact.config.json`.
 ### Traits
-Jetton minter is using *OwnableTransferable* and *Deployable* trait. Actually, you can remove *Deployable* trait. It is used only for more convenient deployment in tests. 
+Jetton minter is using only *OwnableTransferable* which is inherited from *Ownable* trait.
 
 Jetton wallet is using only *Ownable* trait.
 
+**Note: These traits are implemented in stdlib.**
+
+Scheme of inheritance and imports:
+```mermaid
+graph LR
+    B[jetton_minter.tact] -->|import| A[messages.tact]
+    C[jetton_wallet.tact] -->|import| A[messages.tact]
+    B[jetton_minter.tact] -->|import| C[jetton_wallet.tact]
+
+    C[jetton_wallet.tact] -->|uses| E[ownable]
+    B[jetton_minter.tact] -->|uses| F[ownableTransferable]
+    F[ownableTransferable] -->|inherits| E[ownable]
+
+    class E,F ownableStyle;
+
+    classDef ownableStyle stroke-width:2,rx:25,ry:25;
+
+```
 You can learn more about traits in the [Tact standard library](https://docs.tact-lang.org/ref/standard-libraries/).
 
 ## Best Practices
