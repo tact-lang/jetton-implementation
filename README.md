@@ -1,10 +1,10 @@
-# Tact Jetton (Fungible Token) Implementation
+# Jetton (Fungible Token) Implementation in Tact
 
 ## Overview
 
-This project includes a complete setup for working with Tact-based smart contracts for Jettons. It provides:
+This project includes a complete setup for working with Tact-based Jetton smart contracts. It provides:
 
-- A preconfigured Tact compiler.
+- A pre-configured Tact compiler.
 - Smart contracts written in the Tact language.
 - TypeScript + Jest testing environment with `@ton/sandbox`.
 
@@ -50,49 +50,49 @@ Run tests in the `@ton/sandbox` environment:
 ```bash
 yarn test
 ```
+
 ## Jetton Architecture
 
-If you’re new to Jettons, refer to the [TON Jettons Processing](https://docs.ton.org/develop/dapps/asset-processing/jettons)
+If you’re new to Jettons, read the [TON Jettons Processing](https://docs.ton.org/develop/dapps/asset-processing/jettons).
 
 ## Project Structure
 
-Smart contracts themselves are located in the `sources/` directory.
+Smart contracts, their tests and the deployment script are located in the `sources/` directory:
+
 ```
 sources/
-    jetton_minter.tact 
-    jetton_wallet.tact
-    messages.tact 
+│
+│   # Contracts and auxiliary Tact code
+├── jetton_minter.tact
+├── jetton_wallet.tact
+├── messages.tact
+│
+│   # Tests
+├── contract.spec.ts
+│
+│   # Deployment script
+├── contract.deploy.ts
+│
+│   # Miscellaneous utility things
+│   # used for tests and deployments
+├── contract.read.ts
+└── utils/
 ```
 
+Note, that tests and the deployment script require the compiled contracts to be present in the `sources/output/` directory.
 
-Tests are locates in `sources/` directory.
-```
-sources/
-    contrtact.spec.ts
-```
+The configuration for the Tact compiler is in `tact.config.json` in the root of the repository. In most cases you won't need to change this file.
 
-Deployment script is located in `sources/` directory.
-```
-sources/
-    contract.deploy.ts
-```
+## Smart Contracts Structure
 
-Note, that tests and deployment script require the compiled contracts to be present in the `sources/output/` directory.
-Also, additional utils from `sources/utils/` are used in tests and deployment script.
+The main smart contract is `jetton_minter.tact`, it imports `messages.tact` and `jetton_wallet.tact`. With the default configuration of `tact.config.json` targeting `jetton_minter.tact`, they're all compiled automatically.
 
-`tact.config.json` contains the configuration for the Tact compiler. In most cases, you don't need to modify this file.
+### Inherited traits
 
-## Smart-Contracts Structure
+Jetton Minter uses only *OwnableTransferable*, which is inherited from the *Ownable* trait. Jetton Wallet only uses the *Ownable* trait. All these traits come from the Tact's [standard libraries](https://docs.tact-lang.org/ref/standard-libraries/).
 
-Main smart contract is `jetton_minter.tact`. It imports `messages.tact` and `jetton_wallet.tact`, so they will be compiled automatically, when setting `jetton_minter.tact` as target in `tact.config.json`.
-### Traits
-Jetton minter is using only *OwnableTransferable* which is inherited from *Ownable* trait.
+Schemes of inheritance and imports:
 
-Jetton wallet is using only *Ownable* trait.
-
-**Note: These traits are implemented in stdlib.**
-
-Scheme of inheritance and imports:
 ```mermaid
 graph LR
     B[jetton_minter.tact] -->|import| A[messages.tact]
@@ -108,12 +108,13 @@ graph LR
     classDef ownableStyle stroke-width:2,rx:25,ry:25;
 
 ```
-You can learn more about traits in the [Tact standard library](https://docs.tact-lang.org/ref/standard-libraries/).
+
+Read more about those traits in the [Tact standard library](https://docs.tact-lang.org/ref/standard-libraries/).
 
 ## Best Practices
 
-- For guidance on interacting with Jettons using Tact, check the [Jetton Cookbook](https://docs.tact-lang.org/cookbook/jettons/).
-- Be cautious of fake messages sent by scammers. Read the [Security Best Practices](https://docs.tact-lang.org/book/security-best-practices/) for protection against fraudulent activities.
+- For guidance on interacting with Jettons using Tact, read the [Jetton cookbook](https://docs.tact-lang.org/cookbook/jettons/).
+- Be cautious of fake messages sent by scammers. Read [security best practices](https://docs.tact-lang.org/book/security-best-practices/) to protect yourself from fraudulent activities.
 - Always consult the [official Tact documentation](https://docs.tact-lang.org/) for additional resources and support.
 
 ## License
