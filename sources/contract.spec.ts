@@ -146,13 +146,16 @@ describe("JettonMinter", () => {
         notDeployer = await blockchain.treasury('notDeployer');
 
         defaultContent = beginCell().endCell();
-        let msg: Deploy = {
-            $$type: "Deploy",
-            queryId: 0n,
+        let msg: TokenUpdateContent = {
+            $$type: "TokenUpdateContent",
+            content: defaultContent,
         }
         
 
         jettonMinter = blockchain.openContract(await JettonMinter.fromInit(deployer.address, defaultContent));
+
+        //We send Update content to deploy the contract, because it is not automatically deployed after blockchain.openContract
+        //And to deploy it we should send any message. But update content message with same content does not affect anything. That is why I chose it.
         const deployResult = await jettonMinter.send(deployer.getSender(), {value: toNano("0.1")}, msg);
 
         expect(deployResult.transactions).toHaveTransaction({
