@@ -1,4 +1,5 @@
 # Jetton (Fungible Token) Implementation in Tact
+![Work in Progress](https://img.shields.io/badge/Work_In_Progress-Do%20not%20use%20in%20production%20yet-red?style=for-the-badge)
 
 ## Overview
 
