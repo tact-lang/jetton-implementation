@@ -4,7 +4,6 @@ import {
     SandboxContract,
     TreasuryContract,
     internal,
-    printTransactionFees,
 } from '@ton/sandbox';
 
 
@@ -13,7 +12,6 @@ import {
     JettonMinter,
     Mint,
     TokenUpdateContent,
-    Deploy,
     TokenBurn, ProvideWalletAddress, storeTokenTransfer, storeTokenBurn, storeMint
 } from "./output/Jetton_JettonMinter";
 import { JettonWallet, TokenTransfer } from "./output/Jetton_JettonWallet";
@@ -259,11 +257,13 @@ describe("JettonMinter", () => {
             to: deployerJettonWallet.address,
             deploy: true,
         });
-        //TODO Why to send excesses to jetton Minter? does this make sense?
-        // expect(mintResult.transactions).toHaveTransaction({ // excesses
-        //     from: deployerJettonWallet.address,
-        //     to: jettonMinter.address
-        // });
+        //Here was the check, that excesses are send to JettonMinter.
+        //This is an implementation-defined behavior
+        //In my implementation, excesses are sent to the deployer
+        expect(mintResult.transactions).toHaveTransaction({ // excesses
+            from: deployerJettonWallet.address,
+            to: deployer.address
+        });
 
 
         expect(await deployerJettonWallet.getJettonBalance()).toEqual(initialJettonBalance);
@@ -413,7 +413,7 @@ describe("JettonMinter", () => {
         let sentAmount = toNano('0.5');
         let forwardAmount = toNano('0.05');
         let forwardPayload = beginCell().storeUint(0x1234567890abcdefn, 128).endCell();
-        //TODO This block checks forward_payload in place (Either bit equals 0)
+        //This block checks forward_payload in place (Either bit equals 0)
         const sendResult = await deployerJettonWallet.sendTransfer(deployer.getSender(), toNano('0.1'), //tons
             sentAmount, notDeployer.address,
             deployer.address, null, forwardAmount, forwardPayload);
@@ -443,7 +443,7 @@ describe("JettonMinter", () => {
     });
 
 
-    //TODO There was no such test in official implementation
+    //There was no such test in official implementation
     it('correctly sends forward_payload in ref', async () => {
         const deployerJettonWallet = await userWallet(deployer.address);
         let initialJettonBalance = await deployerJettonWallet.getJettonBalance();
@@ -451,7 +451,7 @@ describe("JettonMinter", () => {
         let initialJettonBalance2 = await notDeployerJettonWallet.getJettonBalance();
         let sentAmount = toNano('0.5');
         let forwardAmount = toNano('0.05');
-        //TODO This block checks forward_payload in separate ref (Either bit equals 1)
+        //This block checks forward_payload in separate ref (Either bit equals 1)
         let forwardPayload = beginCell().storeUint(1, 1).storeRef(beginCell().storeUint(0x1234567890abcdefn, 128).endCell()).endCell();
 
         const sendResult = await deployerJettonWallet.sendTransfer(deployer.getSender(), toNano('0.1'), //tons
@@ -533,13 +533,14 @@ describe("JettonMinter", () => {
         expect(await deployerJettonWallet.getJettonBalance()).toEqual(initialJettonBalance);
     });
     describe('Bounces', () => {
-        // This is borrowed from stablecoin, and is not implemented here.
-        // Should it be implemented?
+        // This code is borrowed from the stablecoin implementation.
+        // The behavior is implementation-defined.
+        // I'm still not sure if the code handling these bounces is really necessary,
+        // but I could be wrong. Refer to this issue for details: https://github.com/tact-lang/jetton/issues/10
         it('minter should restore supply on internal_transfer bounce', async () => {
             const deployerJettonWallet    = await userWallet(deployer.address);
             const mintAmount = BigInt(getRandomInt(1000, 2000));
             const mintMsg = beginCell().store(storeMint({$$type: "Mint", amount: mintAmount, receiver: deployer.address})).endCell();
-            //const mintMsg    = JettonMinter.mintMessage(jettonMinter.address, deployer.address, mintAmount,toNano('0.1'), toNano('0.1'));
 
             const supplyBefore = await jettonMinter.getTotalSupply();
             const minterSmc    = await blockchain.getContract(jettonMinter.address);
@@ -590,7 +591,6 @@ describe("JettonMinter", () => {
                 forward_ton_amount: 0n,
                 forward_payload: beginCell().endCell().beginParse()
             })).endCell()
-            //const transferMsg = JettonWallet.transferMessage(txAmount, notDeployer.address, deployer.address, null, 0n, null);
 
             const walletSmc = await blockchain.getContract(deployerJettonWallet.address);
 
@@ -619,13 +619,13 @@ describe("JettonMinter", () => {
             expect(await deployerJettonWallet.getJettonBalance()).toEqual(balanceBefore);
         });
         it('wallet should restore balance on burn_notification bounce', async () => {
-            const initRes = await jettonMinter.sendMint(deployer.getSender(), deployer.address, 201n, 0n, toNano(1));
+            // Mint some jettons
+            await jettonMinter.sendMint(deployer.getSender(), deployer.address, 201n, 0n, toNano(1));
             const deployerJettonWallet = await userWallet(deployer.address);
             const balanceBefore        = await deployerJettonWallet.getJettonBalance();
             const burnAmount = BigInt(getRandomInt(100, 200));
 
             const burnMsg = beginCell().store(storeTokenBurn({amount: burnAmount, $$type: "TokenBurn", query_id: 0n, response_destination: deployer.address, custom_payload: null})).endCell()
-            //const burnMsg = JettonWallet.burnMessage(burnAmount, deployer.address, null);
 
             const walletSmc = await blockchain.getContract(deployerJettonWallet.address);
 
@@ -811,7 +811,8 @@ describe("JettonMinter", () => {
         //let minimalFee = toNano("0.006");
         let L = toNano(0.00000001);
         let R = toNano(0.1);
-        //TODO change false to true if you want to find minimal fee
+        //change false to true if you want to find minimal fee
+        //However, before doing it, remove gas-checks from the smart-contract code
         //implementing binary search
         while(R - L > 1 && false) {
             let minimalFee = (L + R) / 2n;
@@ -836,8 +837,8 @@ describe("JettonMinter", () => {
 
         const sendLow    = await deployerJettonWallet.sendBurn(deployer.getSender(), minimalFee, // ton amount
             burnAmount, deployer.address, null); // amount, response address, custom payload
-        //TODO Here was tests, that checks that there is enough ton to jetton wallet to send a message.
-        //However I check that it is enough ton to process a message from jetton wallet to jetton minter
+        //Here was tests, that checks that there is enough ton to jetton wallet to send a message.
+        //However, I check that it is enough ton to process a message from jetton wallet to jetton minter
         expect(sendLow.transactions).not.toHaveTransaction({
             from: deployerJettonWallet.address,
             to: jettonMinter.address,
@@ -945,7 +946,7 @@ describe("JettonMinter", () => {
         //const fwdFee     = 1464012n;
         //const minimalFee = fwdFee + 10000000n; // toNano('0.0061');
 
-        //TODO Added binary search to find minimal fee
+        //Added binary search to find minimal fee
         let L = toNano(0.00000001);
         let R = toNano(0.1);
         //Binary search here does not affect on anything except time of test
