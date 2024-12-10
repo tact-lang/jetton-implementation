@@ -1,6 +1,8 @@
 # Jetton (Fungible Token) Implementation in Tact
 ![Work in Progress](https://img.shields.io/badge/Work_In_Progress-Do%20not%20use%20in%20production%20yet-red?style=for-the-badge)
 
+# **This will definitely be a stable version of Jettons, but not for now. Please, do not use this code in production. It might have some bugs.**
+
 ## Overview
 
 This project includes a complete setup for working with Tact-based Jetton smart contracts. It provides:
