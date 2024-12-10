@@ -556,7 +556,7 @@ describe("JettonMinter", () => {
         let sendResult = await deployerJettonWallet.sendTransfer(deployer.getSender(), sentAmount,
             sentAmount, someAddress,
             deployer.address, null, forwardAmount, forwardPayload);
-        printTransactionFees(sendResult.transactions);
+
         expect(sendResult.transactions).toHaveTransaction({
             from: deployer.address,
             to: deployerJettonWallet.address,
