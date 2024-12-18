@@ -114,7 +114,7 @@ contract JettonWallet with Ownable {
         require(self.balance >= 0, "Invalid balance after burn");
 
         // This is minimal possible amount of TONs for attached. But still, maybe we should icrease it?
-        require(ctx.value > ton("0.011217199"), "Too little TONs for gas attached");
+        //require(ctx.value > ton("0.011217199"), "Too little TONs for gas attached");
 
         //let fwd_fee: Int = ctx.readForwardFee(); // Gas checks
         //require(ctx.value > ((fwd_fee + 2 * self.gasConsumption) + self.minTonsForStorage), "Invalid value - Burn");
